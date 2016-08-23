@@ -81,6 +81,14 @@ import CoreGraphics
       return self.radius
     }
   }
+    
+    /// The point's radius
+    @IBInspectable public var currentStepRadius: CGFloat = 0.0 {
+        didSet {
+            self._setNeedsRedraw()
+        }
+    }
+    
   
   /// The progress points's raduis
   @IBInspectable public var progressRadius: CGFloat = 0.0 {
@@ -229,7 +237,7 @@ import CoreGraphics
     
     self.layer.addSublayer(self._backgroundLayer)
     self.layer.addSublayer(self._progressLayer)
-    self._progressLayer.mask = self._maskLayer
+//    self._progressLayer.mask = self._maskLayer
     
     self.contentMode = UIViewContentMode.Redraw
   }
@@ -252,11 +260,11 @@ import CoreGraphics
     
     if(self._needsRedraw) {
       
-      let bgPath = self._shapePath(self._centerPoints, aRadius: self._radius, aLineHeight: self._lineHeight)
+      let bgPath = self._shapePath(self._centerPoints.count, centerPoints: self._centerPoints, aRadius: self._radius, currentStepRadius: self.currentStepRadius, aLineHeight: self._lineHeight)
       self._backgroundLayer.path = bgPath.CGPath
       self._backgroundLayer.fillColor = self.backgroundShapeColor.CGColor
       
-      let progressPath = self._shapePath(self._centerPoints, aRadius: self._progressRadius, aLineHeight: self._progressLineHeight)
+      let progressPath = self._shapePath(self.currentIndex+1, centerPoints: self._centerPoints, aRadius: self._progressRadius, currentStepRadius: self.currentStepRadius, aLineHeight: self._progressLineHeight)
       self._progressLayer.path = progressPath.CGPath
       self._progressLayer.fillColor = self.selectedBackgoundColor.CGColor
       
@@ -271,28 +279,28 @@ import CoreGraphics
     
     if let currentProgressCenterPoint = progressCenterPoints.last {
       
-      let maskPath = self._maskPath(currentProgressCenterPoint)
-      self._maskLayer.path = maskPath.CGPath
-      
-      CATransaction.begin()
-      let progressAnimation = CABasicAnimation(keyPath: "path")
-      progressAnimation.duration = self.stepAnimationDuration * CFTimeInterval(abs(self.currentIndex - self._previousIndex))
-      progressAnimation.toValue = maskPath
-      progressAnimation.removedOnCompletion = false
-      progressAnimation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
-      
-      
-      CATransaction.setCompletionBlock { () -> Void in
-        if(self._animationRendering) {
-          if let delegate = self.delegate {
-            delegate.progressBar?(self, didSelectItemAtIndex: self.currentIndex)
-          }
-          self._animationRendering = false
-        }
-      }
-      
-      self._maskLayer.addAnimation(progressAnimation, forKey: "progressAnimation")
-      CATransaction.commit()
+//      let maskPath = self._maskPath(currentProgressCenterPoint)
+//      self._maskLayer.path = maskPath.CGPath
+//      
+//      CATransaction.begin()
+//      let progressAnimation = CABasicAnimation(keyPath: "path")
+//      progressAnimation.duration = self.stepAnimationDuration * CFTimeInterval(abs(self.currentIndex - self._previousIndex))
+//      progressAnimation.toValue = maskPath
+//      progressAnimation.removedOnCompletion = false
+//      progressAnimation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
+//      
+//      
+//      CATransaction.setCompletionBlock { () -> Void in
+//        if(self._animationRendering) {
+//          if let delegate = self.delegate {
+//            delegate.progressBar?(self, didSelectItemAtIndex: self.currentIndex)
+//          }
+//          self._animationRendering = false
+//        }
+//      }
+//      
+//      self._maskLayer.addAnimation(progressAnimation, forKey: "progressAnimation")
+//      CATransaction.commit()
     }
     self._previousIndex = self.currentIndex
   }
@@ -370,9 +378,7 @@ import CoreGraphics
    
    - returns: The computed path
    */
-  private func _shapePath(centerPoints: Array<CGPoint>, aRadius: CGFloat, aLineHeight: CGFloat) -> UIBezierPath {
-    
-    let nbPoint = centerPoints.count
+    private func _shapePath(nbPoint: Int, centerPoints: Array<CGPoint>, aRadius: CGFloat, currentStepRadius: CGFloat, aLineHeight: CGFloat) -> UIBezierPath {
     
     let path = UIBezierPath()
     
@@ -383,12 +389,18 @@ import CoreGraphics
       distanceBetweenCircles = second.x - first.x - 2 * aRadius
     }
     
-    let angle = aLineHeight / 2.0 / aRadius;
     
     var xCursor: CGFloat = 0
     
     
     for i in 0...(2 * nbPoint - 1) {
+
+        var radius = aRadius
+        if currentStepRadius != 0.0 && ((self.currentIndex == i) || (i > nbPoint - 1 && self.currentIndex == 2 * nbPoint - i - 1))
+        {
+            radius = currentStepRadius
+        }
+        let angle = aLineHeight / 2.0 / radius;
       
       var index = i
       if(index >= nbPoint) {
@@ -433,17 +445,18 @@ import CoreGraphics
         endAngle = CGFloat(M_PI)
         
       }
+        
       
-      path.addArcWithCenter(CGPointMake(centerPoint.x, centerPoint.y), radius: aRadius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
+      path.addArcWithCenter(CGPointMake(centerPoint.x, centerPoint.y), radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
       
       if(i < nbPoint - 1) {
-        xCursor += aRadius + distanceBetweenCircles
+        xCursor += radius + distanceBetweenCircles
         path.addLineToPoint(CGPointMake(xCursor, centerPoint.y - aLineHeight / 2.0))
-        xCursor += aRadius
+        xCursor += radius
       } else if (i < (2 * nbPoint - 1) && i >= nbPoint) {
-        xCursor -= aRadius + distanceBetweenCircles
+        xCursor -= radius + distanceBetweenCircles
         path.addLineToPoint(CGPointMake(xCursor, centerPoint.y + aLineHeight / 2.0))
-        xCursor -= aRadius
+        xCursor -= radius
       }
     }
     return path

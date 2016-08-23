@@ -41,6 +41,30 @@ class ExempleViewController: UIViewController {
     
     progressBar.backgroundShapeColor = UIColor(red: 231/255, green: 231/255, blue: 231/255, alpha: 1)
     progressBar.selectedBackgoundColor = UIColor(red: 64/255, green: 173/255, blue: 21/255, alpha: 1)
+    
+    
+    
+    
+    
+    
+    
+    
+    progressBar.numberOfPoints = 6
+    progressBar.lineHeight = 1
+    progressBar.radius = 4
+    progressBar.currentStepRadius = 8
+    progressBar.progressRadius = 4
+    progressBar.progressLineHeight = 0
+    progressBar.displayStepText = false
+    
+    progressBar.currentIndex = 1
+    progressBar.delegate = self
+    
+    progressBar.stepTextColor = UIColor.whiteColor()
+    progressBar.stepTextFont = UIFont.systemFontOfSize(20)
+    
+    progressBar.backgroundShapeColor = UIColor(red: 0.816, green:0.847, blue:0.875, alpha: 1)
+    progressBar.selectedBackgoundColor = UIColor(red: 0.161, green:0.773, blue:0.529, alpha: 1)
   }
 }
 
